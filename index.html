@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoomBook — Meeting Room Booking</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f3ef;
+  --surface: #ffffff;
+  --surface2: #f9f8f5;
+  --surface3: #eeece6;
+  --border: #e2dfd8;
+  --border2: #d4d0c8;
+  --ink: #1a1916;
+  --ink2: #5a5750;
+  --ink3: #9a9690;
+  --accent: #c8522a;
+  --accent-light: #fdf0eb;
+  --green: #2d7a4f;
+  --green-bg: #edf7f1;
+  --red: #c8522a;
+  --red-bg: #fdf0eb;
+  --amber: #b8860b;
+  --amber-bg: #fdf8e8;
+  --blue: #2a5fc8;
+  --blue-bg: #edf0fd;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100vh;
+}
+
+/* subtle grid texture */
+body::before {
+  content:'';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: .35;
+  pointer-events: none; z-index: 0;
+}
+
+.wrap {
+  max-width: 1700px;
+  margin: 0 auto;
+  padding: 24px 20px;
+  position: relative; z-index: 1;
+}
+
+/* ── HEADER ──────────────────────────── */
+header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid var(--ink);
+  flex-wrap: wrap; gap: 14px;
+}
+
+.brand {
+  display: flex; align-items: baseline; gap: 12px;
+}
+.brand-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 28px; font-weight: 900;
+  color: var(--ink); letter-spacing: -1px;
+}
+.brand-name em { color: var(--accent); font-style: normal; }
+.brand-sub {
+  font-size: 10px; color: var(--ink3);
+  text-transform: uppercase; letter-spacing: 2.5px;
+  border: 1px solid var(--border2);
+  padding: 3px 8px; border-radius: 3px;
+}
+
+.header-right {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+
+.clock-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 7px 14px;
+  font-size: 12px; color: var(--ink2);
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  animation: none;
+}
+@keyframes blink {
+  0%,100%{opacity:1;} 50%{opacity:.3;}
+}
+
+.sync-label {
+  font-size: 10px; color: var(--ink3);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+
+.btn {
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px; font-weight: 700;
+  padding: 8px 16px; border-radius: 6px;
+  border: 1.5px solid transparent;
+  cursor: pointer; transition: all .18s;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.btn-dark { background: var(--ink); color: #fff; border-color: var(--ink); }
+.btn-dark:hover { background: #333; }
+.btn-outline { background: transparent; color: var(--ink2); border-color: var(--border2); }
+.btn-outline:hover { border-color: var(--ink2); color: var(--ink); }
+.btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-accent:hover { background: #a8421e; }
+.btn-sm { padding: 6px 12px; font-size: 11px; }
+.btn:disabled { opacity:.4; cursor:not-allowed; }
+
+/* ── CONFIG ──────────────────────────── */
+.config-panel {
+  background: var(--surface);
+  border: 1.5px solid var(--ink);
+  border-radius: 10px; padding: 22px;
+  margin-bottom: 24px; display: none;
+  animation: fadeIn .2s ease;
+}
+.config-panel.open { display: block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(-6px);} to{opacity:1;transform:translateY(0);} }
+
+.cfg-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 2px;
+  color: var(--accent); margin-bottom: 16px;
+}
+.cfg-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 14px; }
+.cfg-f { display: flex; flex-direction: column; gap: 5px; }
+.cfg-f label { font-size: 10px; color: var(--ink3); text-transform: uppercase; letter-spacing: 1px; }
+.cfg-f input {
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: 6px; padding: 8px 12px;
+  color: var(--ink); font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; outline: none; transition: border-color .18s;
+}
+.cfg-f input:focus { border-color: var(--accent); }
+.cfg-warn {
+  background: var(--amber-bg); border: 1px solid #e6c84a;
+  border-radius: 6px; padding: 10px 14px;
+  font-size: 11px; color: var(--amber);
+  margin-bottom: 14px; line-height: 1.7;
+}
+.cfg-acts { display: flex; gap: 10px; align-items: center; }
+
+/* ── TABS ────────────────────────────── */
+.tabs {
+  display: flex; gap: 0;
+  margin-bottom: 22px;
+  border-bottom: 2px solid var(--border2);
+}
+.tab {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 700;
+  padding: 10px 22px;
+  cursor: pointer; color: var(--ink3);
+  border: none; background: transparent;
+  text-transform: uppercase; letter-spacing: .5px;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px; transition: all .18s;
+}
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── CONTROLS ────────────────────────── */
+.view-ctrl {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px; flex-wrap: wrap; gap: 12px;
+}
+.nav-group { display: flex; align-items: center; gap: 8px; }
+.nav-btn {
+  width: 32px; height: 32px;
+  background: var(--surface); border: 1.5px solid var(--border2);
+  border-radius: 6px; cursor: pointer; color: var(--ink2);
+  font-size: 15px; display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.nav-btn:hover { border-color: var(--ink); color: var(--ink); }
+.range-lbl {
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px; font-weight: 800;
+  color: var(--ink); min-width: 240px; text-align: center;
+  letter-spacing: -.3px;
+}
+.ctrl-right { display: flex; align-items: center; gap: 10px; }
+.name-inp {
+  background: var(--surface); border: 1.5px solid var(--border2);
+  border-radius: 6px; padding: 7px 13px;
+  color: var(--ink); font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; outline: none; transition: border-color .18s; width: 190px;
+}
+.name-inp:focus { border-color: var(--accent); }
+
+/* ── STATS ───────────────────────────── */
+.stats {
+  display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap;
+}
+.sc {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 8px; padding: 12px 18px; flex: 1; min-width: 110px;
+}
+.sc-v {
+  font-family: 'Outfit', sans-serif;
+  font-size: 26px; font-weight: 900; line-height: 1;
+}
+.sc-l { font-size: 9px; color: var(--ink3); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+.sc.green .sc-v { color: var(--green); }
+.sc.red .sc-v { color: var(--red); }
+.sc.blue .sc-v { color: var(--blue); }
+.sc.amber .sc-v { color: var(--amber); }
+
+/* ── DAY GRID ────────────────────────── */
+/* 22 slots × 5 rooms — needs horizontal scroll */
+.grid-outer {
+  overflow-x: auto;
+  border: 1.5px solid var(--border2);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.day-grid { min-width: 1800px; }
+
+.time-hdr {
+  display: grid;
+  grid-template-columns: 100px repeat(22, 1fr);
+  background: var(--surface3);
+  border-bottom: 1.5px solid var(--border2);
+  position: sticky; top: 0; z-index: 10;
+}
+.th-blank { border-right: 1.5px solid var(--border2); }
+.th-t {
+  padding: 8px 2px; text-align: center;
+  font-size: 9px; color: var(--ink3);
+  border-right: 1px solid var(--border);
+  letter-spacing: .2px; line-height: 1.3;
+}
+.th-t:last-child { border-right: none; }
+.th-t.hour-mark { background: rgba(200,82,42,.05); color: var(--accent); font-weight: 500; }
+
+.d-room-row {
+  display: grid;
+  grid-template-columns: 100px repeat(22, 1fr);
+  border-bottom: 1px solid var(--border);
+  transition: background .12s;
+}
+.d-room-row:last-child { border-bottom: none; }
+.d-room-row:hover { background: rgba(200,82,42,.02); }
+
+.d-rlabel {
+  padding: 0 14px;
+  display: flex; flex-direction: column; justify-content: center;
+  border-right: 1.5px solid var(--border2);
+  background: var(--surface3); min-height: 60px;
+}
+.d-rname {
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px; font-weight: 900; color: var(--ink);
+}
+.d-rsub { font-size: 9px; color: var(--ink3); margin-top: 2px; }
+
+.slot {
+  height: 60px; border-right: 1px solid var(--border);
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: all .15s;
+}
+.slot:last-child { border-right: none; }
+.slot.hour-sep { border-right: 1.5px solid var(--border2); }
+
+.slot.free { background: var(--green-bg); }
+.slot.free:hover { background: #d6f0e4; }
+.slot.free:hover .slot-in::after {
+  content: '+ Book';
+  position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-size: 10px; font-weight: 800;
+  color: var(--green); text-transform: uppercase; letter-spacing: 1px;
+  background: rgba(45,122,79,.06);
+}
+.slot.taken { background: var(--red-bg); cursor: default; }
+.slot.taken:hover { background: #fbe4db; }
+.slot.taken .slot-in { border: 1px solid rgba(200,82,42,.18); background: rgba(200,82,42,.08); }
+.slot.client-meet { background: #fffbeb !important; cursor: default; }
+.slot.client-meet:hover { background: #fef3c7 !important; }
+.slot.client-meet .slot-in { border: 1px solid rgba(184,134,11,.25) !important; background: rgba(184,134,11,.06) !important; }
+.slot.client-meet .s-who { color: var(--amber) !important; }
+.meet-badge { font-size:7px; font-family:'Outfit',sans-serif; font-weight:800;
+  border-radius:3px; padding:1px 4px; display:inline-block; margin-bottom:2px; letter-spacing:.5px; }
+.client-badge   { background: var(--amber); color:#fff; }
+.internal-badge { background: var(--red);   color:#fff; }
+.slot.past { background: var(--surface3); cursor: not-allowed; opacity: .5; }
+.slot.selected { background: #dbeafe !important; border: 2px solid var(--blue) !important; }
+.slot.selected .slot-in { border-color: var(--blue) !important; background: rgba(42,95,200,.08) !important; }
+kbd { font-family: 'IBM Plex Mono', monospace; }
+
+.slot-in {
+  position: absolute; inset: 2px; border-radius: 4px;
+  padding: 4px 5px; display: flex; flex-direction: column; justify-content: center;
+}
+.slot.taken .slot-in { background: rgba(200,82,42,.08); border: 1px solid rgba(200,82,42,.18); }
+.slot.free .slot-in { border: 1px dashed rgba(45,122,79,.2); }
+.slot.past .slot-in { border: 1px solid rgba(0,0,0,.04); }
+
+.s-who { font-size: 9px; font-weight: 500; color: var(--red); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.s-t { font-size: 8px; color: var(--ink3); margin-top: 1px; }
+
+/* ── WEEK VIEW ───────────────────────── */
+.week-outer {
+  overflow-x: auto;
+  border: 1.5px solid var(--border2);
+  border-radius: 10px; background: var(--surface);
+}
+.week-grid { min-width: 700px; }
+
+.wk-hdr {
+  display: grid; grid-template-columns: 90px repeat(5,1fr);
+  background: var(--surface3);
+  border-bottom: 1.5px solid var(--border2);
+  position: sticky; top: 0; z-index: 10;
+}
+.wkh-blank { border-right: 1.5px solid var(--border2); }
+.wkh-day {
+  padding: 13px 10px; text-align: center;
+  border-right: 1px solid var(--border);
+}
+.wkh-day:last-child { border-right: none; }
+.wkh-day.today { background: var(--accent-light); }
+.wkh-wd {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .8px;
+  color: var(--ink2);
+}
+.wkh-day.today .wkh-wd { color: var(--accent); }
+.wkh-dt { font-size: 10px; color: var(--ink3); margin-top: 3px; }
+
+.wk-room-row {
+  display: grid; grid-template-columns: 90px repeat(5,1fr);
+  border-bottom: 1px solid var(--border);
+  min-height: 88px;
+}
+.wk-room-row:last-child { border-bottom: none; }
+
+.wk-rlabel {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 0 13px; border-right: 1.5px solid var(--border2);
+  background: var(--surface3);
+}
+.wk-rn {
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px; font-weight: 900; color: var(--ink);
+}
+.wk-rs { font-size: 9px; color: var(--ink3); margin-top: 2px; }
+
+.wk-day-cell {
+  border-right: 1px solid var(--border);
+  padding: 8px 7px;
+  display: flex; flex-direction: column; gap: 5px;
+  cursor: pointer; transition: background .12s;
+}
+.wk-day-cell:last-child { border-right: none; }
+.wk-day-cell:hover { background: rgba(200,82,42,.03); }
+.wk-day-cell.past-day { opacity: .4; cursor: not-allowed; }
+
+.mini-row { display: flex; gap: 2px; flex-wrap: wrap; }
+.mini {
+  width: 10px; height: 10px; border-radius: 2px;
+  background: var(--green-bg); border: 1px solid rgba(45,122,79,.2);
+  transition: transform .12s; cursor: pointer;
+}
+.mini:hover { transform: scale(1.3); }
+.mini.bk { background: rgba(200,82,42,.25); border-color: rgba(200,82,42,.3); }
+.mini.ps { background: var(--surface3); border-color: transparent; cursor: default; }
+
+.wk-summary { display: flex; align-items: center; gap: 5px; }
+.wk-free { font-family:'Outfit',sans-serif; font-size:11px; font-weight:800; color:var(--green); }
+.wk-lbl { font-size:9px; color:var(--ink3); }
+.full-badge {
+  font-size: 9px; background: var(--red-bg);
+  color: var(--red); border-radius: 3px;
+  padding: 1px 5px; font-family:'Outfit',sans-serif; font-weight:800;
+  border: 1px solid rgba(200,82,42,.2);
+}
+
+/* ── HEAT MAP ────────────────────────── */
+.hm-outer {
+  overflow-x: auto;
+  border: 1.5px solid var(--border2);
+  border-radius: 10px; background: var(--surface);
+  margin-bottom: 20px;
+}
+.hm-grid { min-width: 700px; }
+
+.hm-hdr {
+  display: grid; grid-template-columns: 100px repeat(5,1fr);
+  background: var(--surface3);
+  border-bottom: 1.5px solid var(--border2);
+}
+.hmh-blank { border-right: 1.5px solid var(--border2); }
+.hmh-day {
+  padding: 13px 10px; text-align: center;
+  border-right: 1px solid var(--border);
+}
+.hmh-day:last-child { border-right: none; }
+.hmh-day.today { background: var(--accent-light); }
+.hmh-wd {
+  font-family:'Outfit',sans-serif; font-size:13px; font-weight:800;
+  text-transform:uppercase; letter-spacing:.8px; color:var(--ink2);
+}
+.hmh-day.today .hmh-wd { color:var(--accent); }
+.hmh-dt { font-size:10px; color:var(--ink3); margin-top:3px; }
+
+.hm-row {
+  display: grid; grid-template-columns: 100px repeat(5,1fr);
+  border-bottom: 1px solid var(--border);
+}
+.hm-row:last-child { border-bottom: none; }
+
+.hm-rlabel {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 0 14px; border-right: 1.5px solid var(--border2);
+  background: var(--surface3); min-height: 76px;
+}
+.hm-rn { font-family:'Outfit',sans-serif; font-size:15px; font-weight:900; color:var(--ink); }
+.hm-rs { font-size:9px; color:var(--ink3); margin-top:2px; }
+
+.hm-cell {
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 10px 8px; gap: 5px;
+  cursor: pointer; transition: all .15s;
+  position: relative;
+}
+.hm-cell:last-child { border-right: none; }
+.hm-cell:hover { filter: brightness(.95); }
+
+.hm-cell.h0 { background: #edf7f1; }
+.hm-cell.h1 { background: #dff0e8; }
+.hm-cell.h2 { background: #fff8e1; }
+.hm-cell.h3 { background: #fff0e6; }
+.hm-cell.h4 { background: #fde8e4; }
+.hm-cell.hpast { background: var(--surface3); opacity:.5; }
+
+.hm-pct {
+  font-family:'Outfit',sans-serif; font-size:22px; font-weight:900; line-height:1;
+}
+.h0 .hm-pct,.h1 .hm-pct { color:var(--green); }
+.h2 .hm-pct { color:var(--amber); }
+.h3 .hm-pct { color:#c87a2a; }
+.h4 .hm-pct { color:var(--red); }
+.hpast .hm-pct { color:var(--ink3); }
+
+.hm-sub { font-size:9px; color:var(--ink3); text-transform:uppercase; letter-spacing:.8px; }
+
+.hm-bar {
+  width:80%; height:3px;
+  background: var(--border); border-radius:2px; overflow:hidden;
+}
+.hm-fill { height:100%; border-radius:2px; transition:width .5s ease; }
+.h0 .hm-fill,.h1 .hm-fill { background:var(--green); }
+.h2 .hm-fill { background:var(--amber); }
+.h3 .hm-fill { background:#c87a2a; }
+.h4 .hm-fill { background:var(--red); }
+
+/* detail panel */
+.detail-panel {
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px; padding: 18px 20px;
+  margin-bottom: 20px;
+}
+.dp-title {
+  font-family:'Outfit',sans-serif; font-size:14px; font-weight:800;
+  color:var(--ink); margin-bottom:14px;
+  display:flex; align-items:center; gap:10px;
+}
+.dp-close {
+  margin-left:auto; cursor:pointer;
+  color:var(--ink3); font-size:18px; transition:color .15s;
+}
+.dp-close:hover { color:var(--ink); }
+.dp-rooms { display:flex; flex-direction:column; gap:10px; }
+.dp-room { display:flex; gap:6px; align-items:flex-start; }
+.dp-rn {
+  font-family:'Outfit',sans-serif; font-size:12px; font-weight:800;
+  color:var(--ink2); width:72px; flex-shrink:0; padding-top:3px;
+}
+.dp-slots { display:flex; gap:3px; flex-wrap:wrap; }
+.dp-slot {
+  padding: 3px 7px; border-radius:4px; font-size:9px; border:1px solid;
+  font-family:'IBM Plex Mono',monospace;
+}
+.dp-slot.free { background:var(--green-bg); border-color:rgba(45,122,79,.25); color:var(--green); cursor:pointer; }
+.dp-slot.free:hover { background:#d6f0e4; }
+.dp-slot.bk { background:var(--red-bg); border-color:rgba(200,82,42,.25); color:var(--red); }
+.dp-slot.ps { background:var(--surface3); border-color:transparent; color:var(--ink3); }
+
+/* legend */
+.hm-legend {
+  display:flex; align-items:center; gap:6px;
+  margin-bottom:18px; flex-wrap:wrap;
+}
+.hml-lbl { font-size:10px; color:var(--ink3); text-transform:uppercase; letter-spacing:1px; margin-right:4px; }
+.hml-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--ink2); margin-right:8px; }
+.hml-sw { width:13px; height:13px; border-radius:3px; border:1px solid var(--border); }
+
+/* ── SETUP ───────────────────────────── */
+.setup-box {
+  background:var(--surface); border:1.5px solid var(--ink);
+  border-radius:12px; padding:56px 32px;
+  text-align:center; margin-top:32px;
+}
+.setup-box .si { font-size:40px; margin-bottom:16px; }
+.setup-box h2 {
+  font-family:'Outfit',sans-serif; font-size:22px; font-weight:900;
+  margin-bottom:10px; letter-spacing:-.5px;
+}
+.setup-box p { font-size:11px; color:var(--ink2); line-height:1.8; max-width:480px; margin:0 auto 22px; }
+.steps {
+  text-align:left; max-width:520px; margin:0 auto 24px;
+  background:var(--surface2); border-radius:8px; padding:18px 20px;
+  border:1px solid var(--border);
+}
+.step { display:flex; gap:10px; margin-bottom:12px; font-size:11px; line-height:1.7; color:var(--ink2); }
+.step:last-child { margin-bottom:0; }
+.sn {
+  width:20px; height:20px; border-radius:50%;
+  background:var(--ink); color:#fff;
+  font-family:'Outfit',sans-serif; font-size:10px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; margin-top:2px;
+}
+.step code {
+  background:rgba(200,82,42,.1); color:var(--accent);
+  padding:1px 5px; border-radius:3px; font-family:'IBM Plex Mono',monospace;
+}
+
+/* ── MONDAY COLUMN MAP ─────────────────
+   Your actual board columns:
+   Item (name)    → meeting title
+   Status         → "Booked" / "Available"
+   Booked By      → text or people
+   Room           → dropdown: ROOM_A … ROOM_E
+   Booking Date   → date column
+   Slots          → dropdown: "09:00-09:30" … "19:30-20:00"
+──────────────────────────────────────── */
+
+/* ── MODAL ───────────────────────────── */
+/* Multi-slot selection bar */
+.sel-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--ink); color: #fff;
+  padding: 14px 24px; display: flex; align-items: center; gap: 16px;
+  z-index: 150; transform: translateY(100%);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  font-size: 13px;
+}
+.sel-bar.show { transform: translateY(0); }
+.sel-bar-info { flex: 1; }
+.sel-bar-room { font-family:'Outfit',sans-serif; font-weight:800; color:var(--accent); font-size:14px; }
+.sel-bar-slots { font-size:11px; color:rgba(255,255,255,.6); margin-top:2px; }
+.sel-clear { background:transparent; border:1px solid rgba(255,255,255,.3); color:rgba(255,255,255,.7);
+  border-radius:6px; padding:7px 14px; cursor:pointer; font-family:'Outfit',sans-serif;
+  font-size:12px; font-weight:700; text-transform:uppercase; }
+.sel-clear:hover { border-color:#fff; color:#fff; }
+.sel-book { background:var(--accent); color:#fff; border:none;
+  border-radius:6px; padding:8px 18px; cursor:pointer;
+  font-family:'Outfit',sans-serif; font-size:13px; font-weight:800; text-transform:uppercase; }
+.sel-book:hover { background:#a8421e; }
+
+.overlay {
+  position:fixed; inset:0;
+  background:rgba(26,25,22,.6);
+  display:flex; align-items:center; justify-content:center;
+  z-index:200; opacity:0; pointer-events:none;
+  transition:opacity .2s; backdrop-filter:blur(4px);
+}
+.overlay.open { opacity:1; pointer-events:all; }
+.modal {
+  background:var(--surface);
+  border:1.5px solid var(--ink);
+  border-top:4px solid var(--accent);
+  border-radius:12px; padding:30px;
+  width:440px; max-width:92vw;
+  transform:translateY(14px); transition:transform .2s;
+  box-shadow:0 20px 60px rgba(0,0,0,.18);
+}
+.overlay.open .modal { transform:translateY(0); }
+.m-room { font-family:'Outfit',sans-serif; font-size:22px; font-weight:900; color:var(--ink); }
+.m-slot { font-size:11px; color:var(--accent); margin-top:3px; margin-bottom:22px; }
+.mf { margin-bottom:16px; }
+.mf label { display:block; font-size:10px; color:var(--ink3); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+.mf input,.mf select {
+  width:100%; background:var(--surface2); border:1.5px solid var(--border);
+  border-radius:6px; padding:10px 13px;
+  color:var(--ink); font-family:'IBM Plex Mono',monospace;
+  font-size:12px; outline:none; transition:border-color .18s;
+}
+.mf input:focus,.mf select:focus { border-color:var(--accent); }
+.m-acts { display:flex; gap:10px; justify-content:flex-end; margin-top:22px; }
+
+/* ── TOAST ───────────────────────────── */
+.toast {
+  position:fixed; bottom:24px; right:24px;
+  background:var(--ink); border-radius:8px;
+  padding:12px 18px; font-size:12px; color:#fff;
+  display:flex; align-items:center; gap:10px;
+  z-index:300; transform:translateY(60px); opacity:0;
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);
+  max-width:300px; box-shadow:0 4px 20px rgba(0,0,0,.25);
+}
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.ok { border-left:3px solid var(--green); }
+.toast.err { border-left:3px solid var(--red); }
+.toast.info { border-left:3px solid var(--blue); }
+
+.spin {
+  width:13px; height:13px;
+  border:2px solid rgba(255,255,255,.2);
+  border-top-color:#fff;
+  border-radius:50%; animation:rot .6s linear infinite;
+  display:inline-block; vertical-align:middle;
+}
+@keyframes rot{to{transform:rotate(360deg);}}
+
+@media(max-width:768px){
+  .cfg-grid{grid-template-columns:1fr 1fr;}
+  header{flex-direction:column;align-items:flex-start;}
+  .range-lbl{min-width:0;font-size:13px;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<header>
+  <div class="brand">
+    <div class="brand-name">Room<em>Book</em></div>
+    <div class="brand-sub">v3 · Anand Rathi IB · 30 min slots</div>
+  </div>
+  <div class="header-right">
+    <div class="clock-pill">
+      <div class="live-dot"></div>
+      <span id="clock">--:--</span>&nbsp;·&nbsp;<span id="dateStr">—</span>
+    </div>
+    <span class="sync-label" id="syncLabel">—</span>
+    <button class="btn btn-outline btn-sm" onclick="toggleCfg()">⚙ Config</button>
+    <button class="btn btn-dark btn-sm" onclick="doRefresh()">↻ Refresh</button>
+  </div>
+</header>
+
+<!-- CONFIG PANEL -->
+<div class="config-panel" id="cfgPanel">
+  <div class="cfg-title">Monday.com Configuration</div>
+  <div class="cfg-warn">✅ Board ID and all column IDs are pre-configured for your team. Each member only needs to enter their own <strong>Personal API Token</strong> once — stored locally in their browser only, never shared.</div>
+  <div class="cfg-grid">
+    <div class="cfg-f"><label>Personal API Token</label><input type="password" id="cfgTok" placeholder="eyJhbGci..."/></div>
+    <div class="cfg-f"><label>Board ID</label><input type="text" id="cfgBid" placeholder="1234567890"/></div>
+    <div class="cfg-f"><label>Status Column ID</label><input type="text" id="cfgSt" placeholder="status"/></div>
+    <div class="cfg-f"><label>Booked By Column ID</label><input type="text" id="cfgBy" placeholder="text"/></div>
+    <div class="cfg-f"><label>Room Column ID</label><input type="text" id="cfgRm" placeholder="dropdown"/></div>
+    <div class="cfg-f"><label>Booking Date Column ID</label><input type="text" id="cfgDt" placeholder="date4"/></div>
+    <div class="cfg-f"><label>Slots Column ID</label><input type="text" id="cfgSl" placeholder="dropdown7"/></div>
+    <div class="cfg-f"><label>People Column ID <span style="color:var(--green);font-size:9px">(for permissions)</span></label><input type="text" id="cfgPc" placeholder="people_xxxxxxx"/></div>
+    <div class="cfg-f"><label>Meeting Type Column ID</label><input type="text" id="cfgMt" placeholder="color_xxxxxxx"/></div>
+  </div>
+  <div class="cfg-acts">
+    <button class="btn btn-accent" onclick="saveCfg()">Save & Connect</button>
+    <button class="btn btn-outline" onclick="toggleCfg()">Cancel</button>
+    <button class="btn btn-outline btn-sm" style="margin-left:auto;color:var(--red);border-color:var(--border2)" onclick="clearAll()">Clear All Data</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" id="tab-day" onclick="switchTab('day')">📅 Day View</button>
+  <button class="tab" id="tab-week" onclick="switchTab('week')">📆 Week View</button>
+  <button class="tab" id="tab-heat" onclick="switchTab('heat')">🔥 Heat Map</button>
+</div>
+
+<!-- DYNAMIC CONTENT -->
+<div id="content"></div>
+
+</div><!-- /wrap -->
+
+<!-- MULTI-SLOT SELECTION BAR -->
+<div class="sel-bar" id="selBar">
+  <div class="sel-bar-info">
+    <div class="sel-bar-room" id="selBarRoom">—</div>
+    <div class="sel-bar-slots" id="selBarSlots">No slots selected</div>
+  </div>
+  <button class="sel-clear" onclick="clearSelection()">✕ Clear</button>
+  <button class="sel-book" onclick="openModalFromSelection()">📅 Book Selected Slots</button>
+</div>
+
+<!-- BOOKING MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="m-room" id="mRoom">Room A</div>
+    <div class="m-slot" id="mSlot">09:00 – 09:30</div>
+    <div class="mf"><label>Your Name</label><input type="text" id="mName" placeholder="Full name"/></div>
+    <div id="mTokenRow" style="font-size:10px;color:var(--ink3);margin:-8px 0 10px;padding:6px 10px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);display:none">
+      🔒 Token verified as: <strong id="mTokenName" style="color:var(--accent)"></strong>
+    </div>
+    <div class="mf"><label>Meeting Title</label><input type="text" id="mTitle" placeholder="e.g. Deal Name Meet, Strategy Discussion, Webinar, Seminar..."/></div>
+    <div class="mf">
+      <label>Meeting Type</label>
+      <select id="mMeetType">
+        <option value="Client Meet">🤝 Client Meet (Priority)</option>
+        <option value="Internal Meet">🏢 Internal Meet</option>
+      </select>
+    </div>
+<input type="hidden" id="mTeamsLink" value=""/>
+    <input type="hidden" id="mPurpose" value=""/>
+    <div class="m-acts">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" id="mBtn" onclick="confirmBooking()">Confirm Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="tIcon">✓</span>
+  <span id="tMsg">Done</span>
+</div>
+
+<script>
+// ─── SLOT DEFINITIONS ─────────────────────────────────────────
+// 22 slots: 09:00 → 20:00 in 30-min increments
+// These must EXACTLY match your Monday.com Slots column labels
+const SLOTS = [
+  '09:00 - 09:30','09:30 - 10:00','10:00 - 10:30','10:30 - 11:00',
+  '11:00 - 11:30','11:30 - 12:00','12:00 - 12:30','12:30 - 13:00',
+  '13:00 - 13:30','13:30 - 14:00','14:00 - 14:30','14:30 - 15:00',
+  '15:00 - 15:30','15:30 - 16:00','16:00 - 16:30','16:30 - 17:00',
+  '17:00 - 17:30','17:30 - 18:00','18:00 - 18:30','18:30 - 19:00',
+  '19:00 - 19:30','19:30 - 20:00'
+];
+
+// Hour separator indices (last slot before each full hour)
+const HOUR_SEPS = [1,3,5,7,9,11,13,15,17,19,21];
+
+const ROOMS = [
+  { id: 'ROOM_A', name: "Amit Sir's Cabin",    mondayLabel: "Amit Sir's Cabin",    cap: 4  },
+  { id: 'ROOM_B', name: 'Boardroom',            mondayLabel: 'Boardroom',            cap: 12 },
+  { id: 'ROOM_C', name: "Krishnav's Old Cabin", mondayLabel: "Krishnav's Old Cabin", cap: 4  },
+  { id: 'ROOM_D', name: 'Lounge',               mondayLabel: 'Lounge',               cap: 8  },
+  { id: 'ROOM_E', name: "Samir's Cabin",        mondayLabel: "Samir's Cabin",        cap: 4  },
+];
+const DAYS  = ['Mon','Tue','Wed','Thu','Fri'];
+
+// ─── STATE ────────────────────────────────────────────────────
+let cfg = {};
+let bookings  = {};  // key: "ROOM_A|09:00-09:30|2026-02-20" → { bookedBy, title, itemId }
+let currentUserId   = null;  // Monday.com user ID fetched on connect
+let currentUserName = null;  // Monday.com display name fetched on connect
+let activeTab = 'day';
+let currentDate = new Date();
+let weekOffset  = 0;
+let detailDayIdx = null;
+let pendingBook  = null;
+let selectedSlots = [];   // [{roomId, slotIdx, date}] for multi-slot booking
+let toastTmr;
+
+// ─── INIT ─────────────────────────────────────────────────────
+function init() {
+  loadCfg();
+  tick();
+  setInterval(tick, 1000);
+  const sn = localStorage.getItem('rb3_name') || '';
+  if (sn) document.getElementById('mName').value = sn;
+
+  document.getElementById('overlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key==='Escape') {
+      if (document.getElementById('overlay').classList.contains('open')) closeModal();
+      else clearSelection();
+    }
+    if (e.key==='Enter' && document.getElementById('overlay').classList.contains('open')) confirmBooking();
+  });
+
+  if (isConfigured()) { renderTab(); loadBookings(); }
+  else showSetup();
+}
+
+function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('dateStr').textContent =
+    n.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+}
+
+// ─── CONFIG ───────────────────────────────────────────────────
+// Board and column IDs pre-configured for: anandrathiib.monday.com
+const BOARD_DEFAULTS = {
+  boardId:      '5026721345',
+  statusCol:    'color_mm0qk1vj',
+  byCol:        'text_mm0q95j1',
+  roomCol:      'dropdown_mm0q5v0b',
+  dateCol:      'date_mm0qeqfs',
+  slotCol:      'dropdown_mm0qevc9',
+  peopleCol:    'multiple_person_mm0vbvj',
+  meetTypeCol:  'color_mm0zvtpg',
+};
+
+function loadCfg() {
+  cfg = {
+    token:     localStorage.getItem('rb3_tok')  || '',
+    boardId:   localStorage.getItem('rb3_bid')  || BOARD_DEFAULTS.boardId,
+    statusCol: localStorage.getItem('rb3_st')   || BOARD_DEFAULTS.statusCol,
+    byCol:     localStorage.getItem('rb3_by')   || BOARD_DEFAULTS.byCol,
+    roomCol:   localStorage.getItem('rb3_rm')   || BOARD_DEFAULTS.roomCol,
+    dateCol:   localStorage.getItem('rb3_dt')   || BOARD_DEFAULTS.dateCol,
+    slotCol:   localStorage.getItem('rb3_sl')   || BOARD_DEFAULTS.slotCol,
+    peopleCol:   localStorage.getItem('rb3_pc')   || BOARD_DEFAULTS.peopleCol,
+    meetTypeCol: localStorage.getItem('rb3_mt')   || BOARD_DEFAULTS.meetTypeCol,
+  };
+  if (cfg.token)   document.getElementById('cfgTok').value = cfg.token;
+  document.getElementById('cfgBid').value  = cfg.boardId;
+  document.getElementById('cfgSt').value   = cfg.statusCol;
+  document.getElementById('cfgBy').value   = cfg.byCol;
+  document.getElementById('cfgRm').value   = cfg.roomCol;
+  document.getElementById('cfgDt').value   = cfg.dateCol;
+  document.getElementById('cfgSl').value   = cfg.slotCol;
+  document.getElementById('cfgPc').value   = cfg.peopleCol;
+  if (document.getElementById('cfgMt')) document.getElementById('cfgMt').value = cfg.meetTypeCol;
+}
+
+function saveCfg() {
+  cfg.token     = document.getElementById('cfgTok').value.trim();
+  cfg.boardId   = document.getElementById('cfgBid').value.trim();
+  cfg.statusCol = document.getElementById('cfgSt').value.trim()  || 'status';
+  cfg.byCol     = document.getElementById('cfgBy').value.trim()  || 'text';
+  cfg.roomCol   = document.getElementById('cfgRm').value.trim()  || 'dropdown';
+  cfg.dateCol   = document.getElementById('cfgDt').value.trim()  || 'date4';
+  cfg.slotCol   = document.getElementById('cfgSl').value.trim()  || 'dropdown7';
+  cfg.peopleCol = document.getElementById('cfgPc').value.trim()  || '';
+
+  if (!cfg.token || !cfg.boardId) { toast('err','✗','API token and Board ID required.'); return; }
+  localStorage.setItem('rb3_tok',  cfg.token);
+  localStorage.setItem('rb3_bid',  cfg.boardId);
+  localStorage.setItem('rb3_st',   cfg.statusCol);
+  localStorage.setItem('rb3_by',   cfg.byCol);
+  localStorage.setItem('rb3_rm',   cfg.roomCol);
+  localStorage.setItem('rb3_dt',   cfg.dateCol);
+  localStorage.setItem('rb3_sl',   cfg.slotCol);
+  localStorage.setItem('rb3_pc',   cfg.peopleCol);
+  cfg.meetTypeCol = document.getElementById('cfgMt').value.trim() || '';
+  localStorage.setItem('rb3_mt',   cfg.meetTypeCol);
+  toggleCfg();
+  currentUserId = null; // reset so it re-fetches with new token
+  renderTab();
+  loadBookings();
+  toast('ok','✓','Connected to Monday.com');
+}
+
+function clearAll() {
+  if (!confirm('Clear all saved config and data?')) return;
+  ['rb3_tok','rb3_bid','rb3_st','rb3_by','rb3_rm','rb3_dt','rb3_sl','rb3_name'].forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
+
+function isConfigured() { return !!(cfg.token && cfg.boardId); }
+function toggleCfg() { document.getElementById('cfgPanel').classList.toggle('open'); }
+
+// ─── DATE HELPERS ─────────────────────────────────────────────
+function fmtDate(d) {
+  // Use local date parts to avoid UTC timezone offset shifting the date
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+
+function getWeekDates(offset=0) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = today.getDay();
+  const mon = new Date(today);
+  mon.setDate(today.getDate() - (dow===0?6:dow-1) + offset*7);
+  return Array.from({length:5},(_,i)=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return d; });
+}
+
+function isToday(d) {
+  const t=new Date(); t.setHours(0,0,0,0);
+  const dd=new Date(d); dd.setHours(0,0,0,0);
+  return dd.getTime()===t.getTime();
+}
+
+function isPastDay(d) {
+  const t=new Date(); t.setHours(0,0,0,0);
+  const dd=new Date(d); dd.setHours(0,0,0,0);
+  return dd<t;
+}
+
+// Only allow booking up to end of NEXT week (Sun of next week)
+function isWeekend(d) {
+  const dow = new Date(d).getDay(); // 0=Sun, 6=Sat
+  return dow === 0 || dow === 6;
+}
+
+function isBookingAllowed(d) {
+  if (isWeekend(d)) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = today.getDay();
+  const daysToNextSun = (7 - dow) + 7;
+  const limit = new Date(today);
+  limit.setDate(today.getDate() + daysToNextSun);
+  const dd = new Date(d); dd.setHours(0,0,0,0);
+  return dd <= limit && !isPastDay(d);
+}
+
+function isSlotPast(d, slotIdx) {
+  if (isPastDay(d)) return true;
+  if (!isToday(d)) return false;
+  // slot starts at: 9*60 + slotIdx*30 minutes from midnight
+  const startMins = 9*60 + slotIdx*30;
+  const nowMins   = new Date().getHours()*60 + new Date().getMinutes();
+  return nowMins >= startMins;
+}
+
+function bookingKey(roomId, slotLabel, date) {
+  return `${roomId}|${slotLabel}|${fmtDate(date)}`;
+}
+
+// ─── MONDAY.COM API ───────────────────────────────────────────
+async function fetchCurrentUser() {
+  // Fetch the Monday.com user ID for the current API token
+  // This is called once on connect and cached in currentUserId
+  try {
+    const data = await mondayQuery(`{ me { id name email } }`);
+    currentUserId   = data.me.id;
+    currentUserName = data.me.name;
+    console.log(`RoomBook: Logged in as ${data.me.name} (ID: ${currentUserId})`);
+    return data.me;
+  } catch(e) {
+    console.warn('Could not fetch user ID:', e.message);
+    currentUserId = null;
+    return null;
+  }
+}
+async function mondayQuery(query, variables={}) {
+  // Direct call to Monday API.
+  // NOTE: If CORS blocks this, deploy the netlify/functions/monday-proxy.js
+  // and switch the URL to '/.netlify/functions/monday-proxy'
+  const PROXY = '/.netlify/functions/monday-proxy';
+  const DIRECT = 'https://api.monday.com/v2';
+
+  // Try proxy first (works when function is deployed), fall back to direct
+  const useProxy = window._mondayProxyAvailable !== false;
+
+  const url     = useProxy ? PROXY : DIRECT;
+  const headers = useProxy
+    ? { 'Content-Type': 'application/json', 'x-monday-token': cfg.token }
+    : { 'Content-Type': 'application/json', 'Authorization': cfg.token, 'API-Version': '2024-10' };
+
+  const r = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({query, variables})
+  });
+
+  // If proxy returns HTML (404/not found), fall back to direct and remember
+  const text = await r.text();
+  if (text.trim().startsWith('<')) {
+    window._mondayProxyAvailable = false;
+    console.warn('[RoomBook] Proxy not found, falling back to direct API call');
+    const r2 = await fetch(DIRECT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': cfg.token, 'API-Version': '2024-10' },
+      body: JSON.stringify({query, variables})
+    });
+    const raw2 = await r2.json();
+    if (raw2.errors) throw new Error(raw2.errors[0].message);
+    if (!raw2.data)  throw new Error(raw2.error_message || 'Empty response');
+    return raw2.data;
+  }
+
+  const raw = JSON.parse(text);
+  if (raw.errors) throw new Error(raw.errors[0].message);
+  if (!raw.data)  throw new Error(raw.error_message || 'Empty response from Monday API');
+  return raw.data;
+}
+
+async function loadBookings() {
+  if (!isConfigured()) return;
+  toast('info','⟳','Connecting...');
+  try {
+    // Fetch user ID first if not already fetched
+    if (!currentUserId) {
+      const me = await fetchCurrentUser();
+      if (me) toast('info','👤',`Connected as ${me.name.split(' ')[0]}`);
+    }
+    await fetchAndParse();
+    renderTab();
+    const now = new Date();
+    document.getElementById('syncLabel').textContent =
+      `Synced ${now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}`;
+    toast('ok','✓','Bookings loaded — hit ↻ to refresh anytime');
+  } catch(e) {
+    console.error(e);
+    toast('err','✗',`Error: ${e.message}`);
+  }
+}
+
+// silentRefresh only called on manual refresh or page load — no auto-polling
+async function silentRefresh() {
+  if (!isConfigured()) return;
+  try {
+    await fetchAndParse();
+    selectedSlots = [];
+    renderTab();
+    const now = new Date();
+    document.getElementById('syncLabel').textContent =
+      `Synced ${now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}`;
+  } catch(e) { /* silent */ }
+}
+
+async function fetchAndParse() {
+  // API 2024-10 returns typed columns; use typed fragments to get display_value
+  // which is the reliable source across all column types.
+  // display_value is populated consistently for dropdown, status, date, people, text.
+  const data = await mondayQuery(`
+    query($bid:[ID!]) {
+      boards(ids:$bid) {
+        items_page(limit:500) {
+          cursor
+          items {
+            id name
+            column_values {
+              id type text value
+              ... on StatusValue     { label }
+              ... on DropdownValue   { values { label } }
+              ... on DateValue       { date }
+              ... on PeopleValue     { text }
+              ... on MirrorValue     { display_value }
+              ... on BoardRelationValue { display_value }
+            }
+          }
+        }
+      }
+    }
+  `, {bid:[cfg.boardId]});
+
+  bookings = {};
+  const items = data.boards[0]?.items_page?.items || [];
+
+  // Debug flag — set to true in browser: localStorage.setItem('rb3_debug','1')
+  const DBG = localStorage.getItem('rb3_debug') === '1';
+  if (DBG) console.log('[RoomBook] Raw items fetched:', items.length, items);
+
+  // Resolve display text across all the shapes Monday returns in API 2024-10
+  const resolveText = (cv) => {
+    if (!cv) return '';
+    // 1. Typed fragment fields (most reliable)
+    if (cv.label)                                    return cv.label;               // StatusValue
+    if (Array.isArray(cv.values) && cv.values.length) return cv.values.map(v => v.label).join(', '); // DropdownValue
+    if (cv.date)                                     return cv.date;                // DateValue
+    if (cv.display_value)                            return cv.display_value;       // Mirror / BoardRelation
+    // 2. Plain text (works for text / people / most types)
+    if (cv.text != null && cv.text !== '')           return cv.text;
+    // 3. Last resort: parse raw value JSON
+    if (!cv.value) return '';
+    try {
+      const v = typeof cv.value === 'string' ? JSON.parse(cv.value) : cv.value;
+      if (Array.isArray(v?.labels))       return v.labels.join(', ');
+      if (Array.isArray(v?.chosenValues)) return v.chosenValues.map(x => x.name).join(', ');
+      if (v?.label?.text)                 return v.label.text;
+      if (typeof v?.label === 'string')   return v.label;
+      if (v?.text)                        return v.text;
+      if (v?.date)                        return v.date;
+      return '';
+    } catch { return ''; }
+  };
+
+  let skippedStatus = 0, skippedMissing = 0, skippedRoom = 0, accepted = 0;
+  items.forEach(item => {
+    let status='', by='', room='', dateVal='', slotVal='', meetType='', title=item.name;
+    item.column_values.forEach(cv => {
+      if (cv.id === cfg.statusCol)   status  = resolveText(cv);
+      if (cv.id === cfg.byCol)       by      = resolveText(cv);
+      if (cv.id === cfg.roomCol)     room    = resolveText(cv);
+      if (cv.id === cfg.dateCol)     dateVal = resolveText(cv);
+      if (cv.id === cfg.slotCol)     slotVal = resolveText(cv);
+      if (cv.id === cfg.meetTypeCol) meetType = resolveText(cv);
+    });
+
+    if (DBG) console.log(`[RoomBook] Item "${item.name}" →`, { status, by, room, dateVal, slotVal, meetType });
+
+    if (status !== 'Booked')              { skippedStatus++;  return; }
+    if (!room || !dateVal || !slotVal)    { skippedMissing++; if (DBG) console.warn('  dropped (missing fields):', {room, dateVal, slotVal}); return; }
+
+    // Match room by mondayLabel; fall back to case-insensitive / id match
+    const roomClean = room.trim();
+    const roomObj = ROOMS.find(r => r.mondayLabel === roomClean)
+                 || ROOMS.find(r => r.mondayLabel.toLowerCase() === roomClean.toLowerCase())
+                 || ROOMS.find(r => r.id === roomClean);
+    if (!roomObj)                         { skippedRoom++; if (DBG) console.warn('  dropped (unknown room):', roomClean); return; }
+
+    // Normalise date — Monday returns "YYYY-MM-DD" or locale variants
+    let dateKey = dateVal.trim();
+    if (dateKey.includes(' ') || dateKey.includes('/')) {
+      const parsed = new Date(dateKey);
+      if (!isNaN(parsed)) dateKey = fmtDate(parsed);
+    }
+
+    // slotVal may contain multiple slots comma-separated
+    const slotLabels = slotVal.split(',').map(s => s.trim()).filter(Boolean);
+    slotLabels.forEach(sl => {
+      const key = `${roomObj.id}|${sl}|${dateKey}`;
+      bookings[key] = { bookedBy: by || 'Reserved', title: title || '', meetType: meetType || 'Internal Meet', itemId: item.id };
+    });
+    accepted++;
+  });
+
+  if (DBG || items.length > 0 && Object.keys(bookings).length === 0) {
+    console.log(`[RoomBook] Parse summary: ${accepted} accepted, ${skippedStatus} not "Booked", ${skippedMissing} missing fields, ${skippedRoom} unknown room. Total items: ${items.length}`);
+  }
+}
+
+async function createBooking(roomId, slots, date, name, title, purpose, meetType='Internal Meet', teamsLink='') {
+  // meetType written to Monday.com status column if configured
+  // slots = array of slot label strings e.g. ['09:00 - 09:30','09:30 - 10:00']
+  // Monday dropdown accepts multiple labels in one item
+  const slotDisplay = slots.length > 1
+    ? `${slots[0].split(' - ')[0]} - ${slots[slots.length-1].split(' - ')[1]}`
+    : slots[0];
+
+  const roomName    = ROOMS.find(r => r.id === roomId)?.name || roomId;
+  const itemName    = title || `${name} · ${roomName} · ${slotDisplay}`;
+  const fullPurpose = [meetType==='Client Meet' && teamsLink ? `Teams: ${teamsLink}` : ''].filter(Boolean).join(' | ');
+
+  const colVals = {
+    [cfg.statusCol]: { label: 'Booked' },
+    [cfg.byCol]:     name + (fullPurpose ? ` — ${fullPurpose}` : ''),
+    [cfg.roomCol]:   { labels: [ROOMS.find(r=>r.id===roomId)?.mondayLabel || roomId] },
+    [cfg.dateCol]:   { date: fmtDate(date) },
+    [cfg.slotCol]:   { labels: slots }
+  };
+
+  if (cfg.meetTypeCol) colVals[cfg.meetTypeCol] = { label: meetType };
+  if (cfg.peopleCol && currentUserId) {
+    colVals[cfg.peopleCol] = { personsAndTeams: [{ id: currentUserId, kind: 'person' }] };
+  }
+  const data = await mondayQuery(`
+    mutation($bid:ID!, $name:String!, $cols:JSON!) {
+      create_item(board_id:$bid, item_name:$name, column_values:$cols) { id }
+    }
+  `, { bid: cfg.boardId, name: itemName, cols: JSON.stringify(colVals) });
+  return data.create_item.id;
+}
+
+function doRefresh() { selectedSlots=[]; clearSelection(); loadBookings(); }
+
+// ─── TAB SWITCHING ────────────────────────────────────────────
+function switchTab(tab) {
+  activeTab = tab;
+  detailDayIdx = null;
+  ['day','week','heat'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle('active', t===tab);
+  });
+  renderTab();
+}
+
+function renderTab() {
+  if (!isConfigured()) { showSetup(); return; }
+  if (activeTab==='day')  renderDay();
+  else if (activeTab==='week') renderWeek();
+  else renderHeat();
+}
+
+// ─── STATS HTML ───────────────────────────────────────────────
+function computeStats(dates) {
+  let booked=0, avail=0;
+  dates.forEach(d => {
+    if (isWeekend(d)) return;
+    ROOMS.forEach(r => {
+      SLOTS.forEach((sl,i) => {
+        if (isSlotPast(d,i)) return;
+        if (bookings[bookingKey(r.id,sl,d)]) booked++; else avail++;
+      });
+    });
+  });
+  const total = booked+avail;
+  const pct = total ? Math.round(booked/total*100) : 0;
+  return {booked, avail, total, pct};
+}
+
+function statsHTML(dates, lbl) {
+  const {booked,avail,pct} = computeStats(dates);
+  return `<div class="stats">
+    <div class="sc green"><div class="sc-v">${avail}</div><div class="sc-l">Available Slots</div></div>
+    <div class="sc red"><div class="sc-v">${booked}</div><div class="sc-l">Booked Slots</div></div>
+    <div class="sc amber"><div class="sc-v">${pct}%</div><div class="sc-l">Occupancy ${lbl}</div></div>
+    <div class="sc blue"><div class="sc-v">${SLOTS.length}</div><div class="sc-l">Slots / Room / Day</div></div>
+  </div>`;
+}
+
+// ─── DAY VIEW ─────────────────────────────────────────────────
+function renderDay() {
+  const lbl = currentDate.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  // If weekend, show closed message
+  if (isWeekend(currentDate)) {
+    document.getElementById('content').innerHTML = `
+      <div class="view-ctrl">
+        <div class="nav-group">
+          <div class="nav-btn" onclick="changeDay(-1)">‹</div>
+          <div class="range-lbl">${lbl}</div>
+          <div class="nav-btn" onclick="changeDay(1)">›</div>
+        </div>
+      </div>
+      <div style="text-align:center;padding:80px 20px;background:var(--surface);border:1.5px solid var(--border2);border-radius:10px;margin-top:8px">
+        <div style="font-size:48px;margin-bottom:16px">🏖️</div>
+        <div style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:var(--ink);margin-bottom:8px">Weekend — Office Closed</div>
+        <div style="font-size:12px;color:var(--ink3)">No bookings on Saturday or Sunday. Use ‹ › to navigate to a weekday.</div>
+      </div>`;
+    return;
+  }
+  const bookingAllowedToday = isBookingAllowed(currentDate);
+
+  let html = `
+    <div class="view-ctrl">
+      <div class="nav-group">
+        <div class="nav-btn" onclick="changeDay(-1)">‹</div>
+        <div class="range-lbl">${lbl}</div>
+        <div class="nav-btn" onclick="changeDay(1)">›</div>
+      </div>
+      <div class="ctrl-right">
+        ${!bookingAllowedToday && !isPastDay(currentDate) ? `<span style="font-size:11px;color:var(--red);border:1px solid rgba(200,82,42,.3);padding:5px 12px;border-radius:6px;background:var(--red-bg)">⚠ Booking closed — max 1 week ahead</span>` : ''}
+        <input class="name-inp" type="text" placeholder="Your name..." id="dName"
+          value="${localStorage.getItem('rb3_name')||''}"
+          oninput="localStorage.setItem('rb3_name',this.value)"/>
+      </div>
+    </div>
+    ${statsHTML([currentDate],'Today')}
+    <div style="font-size:10px;color:var(--ink3);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">
+      💡 Click a slot to book · Hold <kbd style="background:var(--surface3);border:1px solid var(--border2);padding:1px 5px;border-radius:3px">Shift</kbd> and click multiple slots to book a longer session
+    </div>
+    <div class="grid-outer"><div class="day-grid" id="dayGridInner">
+      <div class="time-hdr">
+        <div class="th-blank"></div>`;
+
+  SLOTS.forEach((s,i) => {
+    const hs = HOUR_SEPS.includes(i) ? ' hour-sep' : '';
+    const hm = (i%2===0) ? ' hour-mark' : '';
+    html += `<div class="th-t${hm}${hs}">${s}</div>`;
+  });
+  html += `</div>`;
+
+  ROOMS.forEach(room => {
+    html += `<div class="d-room-row">
+      <div class="d-rlabel">
+        <div class="d-rname">${room.name}</div>
+        <div class="d-rsub">${room.cap} seats</div>
+      </div>`;
+    SLOTS.forEach((sl,i) => {
+      const key  = bookingKey(room.id, sl, currentDate);
+      const bk   = bookings[key];
+      const past = isSlotPast(currentDate, i);
+      const hs   = HOUR_SEPS.includes(i) ? ' hour-sep' : '';
+      const selAttr = `data-room="${room.id}" data-slot="${i}" data-date="${fmtDate(currentDate)}"`;
+      if (bk) {
+        const isClient  = bk.meetType === 'Client Meet';
+        const slotClass = isClient ? 'taken client-meet' : 'taken';
+        // FIX 2: Show "Entered Name (Token First Name)" — extract first name from tokenName
+        const tokenFirst = bk.tokenName ? bk.tokenName.split(' ')[0] : '';
+        const enteredName = bk.bookedBy.replace(/\s*\([^)]*\)/, '').trim(); // strip any existing bracket
+        const displayWho  = tokenFirst && tokenFirst !== enteredName
+          ? `${enteredName} (${tokenFirst})`
+          : enteredName;
+        const badge = isClient
+          ? `<span class="meet-badge client-badge">🤝 Client</span>`
+          : `<span class="meet-badge internal-badge">🏢 Internal</span>`;
+        html += `<div class="slot ${slotClass}${hs}" title="${bk.bookedBy}${bk.title?' · '+bk.title:''}">
+          <div class="slot-in">${badge}<div class="s-who">● ${displayWho}</div><div class="s-t">${bk.title||''}</div></div>
+        </div>`;
+      } else if (past || !bookingAllowedToday) {
+        html += `<div class="slot past${hs}"><div class="slot-in"></div></div>`;
+      } else {
+        html += `<div class="slot free${hs} selectable" ${selAttr} onclick="handleSlotClick(event,this)">
+          <div class="slot-in"></div>
+        </div>`;
+      }
+    });
+    html += `</div>`;
+  });
+  html += `</div></div>`;
+  document.getElementById('content').innerHTML = html;
+}
+
+function changeDay(d) {
+  selectedSlots = [];
+  currentDate = new Date(currentDate);
+  currentDate.setDate(currentDate.getDate()+d);
+  // Skip Saturday/Sunday
+  while (isWeekend(currentDate)) {
+    currentDate.setDate(currentDate.getDate()+d);
+  }
+  renderDay();
+}
+
+// ─── WEEK VIEW ────────────────────────────────────────────────
+function renderWeek() {
+  const wk = getWeekDates(weekOffset);
+  const rl = `${wk[0].toLocaleDateString('en-IN',{day:'numeric',month:'short'})} – ${wk[4].toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
+
+  let html = `
+    <div class="view-ctrl">
+      <div class="nav-group">
+        <div class="nav-btn" onclick="changeWeek(-1)">‹</div>
+        <div class="range-lbl">${rl}</div>
+        <div class="nav-btn" onclick="changeWeek(1)">›</div>
+      </div>
+      <div class="ctrl-right">
+        <input class="name-inp" type="text" placeholder="Your name..." id="wName"
+          value="${localStorage.getItem('rb3_name')||''}"
+          oninput="localStorage.setItem('rb3_name',this.value)"/>
+      </div>
+    </div>
+    ${statsHTML(wk,'This Week')}
+    <div class="week-outer"><div class="week-grid">
+      <div class="wk-hdr"><div class="wkh-blank"></div>`;
+
+  wk.forEach((d,i) => {
+    const tod = isToday(d);
+    html += `<div class="wkh-day${tod?' today':''}">
+      <div class="wkh-wd">${DAYS[i]}</div>
+      <div class="wkh-dt">${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  ROOMS.forEach(room => {
+    html += `<div class="wk-room-row">
+      <div class="wk-rlabel"><div class="wk-rn">${room.name}</div><div class="wk-rs">${room.cap} seats</div></div>`;
+    wk.forEach((d,di) => {
+      const pd = isPastDay(d);
+      const allowed = isBookingAllowed(d);
+      let freeC=0, bkC=0;
+      let minis = '<div class="mini-row">';
+      SLOTS.forEach((sl,si) => {
+        const key  = bookingKey(room.id,sl,d);
+        const bk   = bookings[key];
+        const past = isSlotPast(d,si);
+        if (bk) { bkC++; minis+=`<div class="mini bk" title="${bk.bookedBy} · ${sl}"></div>`; }
+        else if (past || !allowed) { minis+=`<div class="mini ps"></div>`; }
+        else {
+          freeC++;
+          minis+=`<div class="mini" onclick="event.stopPropagation();currentDate=new Date('${fmtDate(d)}T00:00:00');selectedSlots=[];switchTab('day')" title="Book ${sl}"></div>`;
+        }
+      });
+      minis += '</div>';
+      const full = freeC===0 && !pd && allowed;
+      const tooFar = !pd && !allowed;
+      html += `<div class="wk-day-cell${pd?' past-day':''}" onclick="jumpDay(${di})">
+        ${minis}
+        <div class="wk-summary">
+          ${pd       ? `<span class="wk-lbl" style="color:var(--ink3)">Past</span>`
+          : tooFar   ? `<span class="wk-lbl" style="color:var(--ink3)">Too far</span>`
+          : full     ? `<span class="full-badge">FULL</span>`
+          : `<span class="wk-free">${freeC}</span><span class="wk-lbl"> free</span>`}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  html += `</div></div>`;
+  document.getElementById('content').innerHTML = html;
+}
+
+function changeWeek(d) { weekOffset+=d; renderWeek(); }
+function jumpDay(idx) { const wk=getWeekDates(weekOffset); currentDate=new Date(wk[idx]); switchTab('day'); }
+
+// ─── HEAT MAP ─────────────────────────────────────────────────
+function renderHeat() {
+  const wk = getWeekDates(weekOffset);
+  const rl = `${wk[0].toLocaleDateString('en-IN',{day:'numeric',month:'short'})} – ${wk[4].toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
+
+  let html = `
+    <div class="view-ctrl">
+      <div class="nav-group">
+        <div class="nav-btn" onclick="changeHeatWeek(-1)">‹</div>
+        <div class="range-lbl">${rl}</div>
+        <div class="nav-btn" onclick="changeHeatWeek(1)">›</div>
+      </div>
+      <div class="ctrl-right">
+        <span style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:1px">Click cell for slot detail</span>
+      </div>
+    </div>
+    ${statsHTML(wk,'This Week')}
+    <div class="hm-legend">
+      <span class="hml-lbl">Occupancy:</span>
+      <div class="hml-item"><div class="hml-sw" style="background:#edf7f1"></div>0–25% free</div>
+      <div class="hml-item"><div class="hml-sw" style="background:#dff0e8"></div>26–50%</div>
+      <div class="hml-item"><div class="hml-sw" style="background:#fff8e1"></div>51–75%</div>
+      <div class="hml-item"><div class="hml-sw" style="background:#fff0e6"></div>76–99%</div>
+      <div class="hml-item"><div class="hml-sw" style="background:#fde8e4"></div>100% Full</div>
+    </div>`;
+
+  // Detail panel
+  if (detailDayIdx !== null) {
+    const d = wk[detailDayIdx];
+    html += `<div class="detail-panel">
+      <div class="dp-title">
+        Slot Detail — ${d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'})}
+        <span class="dp-close" onclick="detailDayIdx=null;renderHeat()">×</span>
+      </div>
+      <div class="dp-rooms">`;
+    ROOMS.forEach(room => {
+      html += `<div class="dp-room">
+        <div class="dp-rn">${room.name}</div>
+        <div class="dp-slots">`;
+      SLOTS.forEach((sl,si) => {
+        const key = bookingKey(room.id,sl,d);
+        const bk  = bookings[key];
+        const past= isSlotPast(d,si);
+        const allowed = isBookingAllowed(d);
+        if (bk)               html += `<div class="dp-slot bk" title="${bk.bookedBy}">${sl}</div>`;
+        else if (past||!allowed) html += `<div class="dp-slot ps">${sl}</div>`;
+        else                  html += `<div class="dp-slot free" onclick="currentDate=new Date('${fmtDate(d)}T00:00:00');selectedSlots=[];switchTab('day')" title="Go to Day View to book">${sl}</div>`;
+      });
+      html += `</div></div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  html += `<div class="hm-outer"><div class="hm-grid">
+    <div class="hm-hdr"><div class="hmh-blank"></div>`;
+  wk.forEach((d,i) => {
+    const tod = isToday(d);
+    html += `<div class="hmh-day${tod?' today':''}">
+      <div class="hmh-wd">${DAYS[i]}</div>
+      <div class="hmh-dt">${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  ROOMS.forEach(room => {
+    html += `<div class="hm-row">
+      <div class="hm-rlabel"><div class="hm-rn">${room.name}</div><div class="hm-rs">${room.cap} seats</div></div>`;
+    wk.forEach((d,di) => {
+      const pd = isPastDay(d);
+      let bkC=0, tot=0;
+      SLOTS.forEach((sl,si) => {
+        if (isSlotPast(d,si)) return;
+        tot++;
+        if (bookings[bookingKey(room.id,sl,d)]) bkC++;
+      });
+      if (pd && tot===0) {
+        html += `<div class="hm-cell hpast"><div class="hm-pct">—</div><div class="hm-sub">Past</div><div class="hm-bar"><div class="hm-fill" style="width:0"></div></div></div>`;
+        return;
+      }
+      const pct = tot ? Math.round(bkC/tot*100) : 0;
+      let hc = 'h0';
+      if (pct>75) hc='h4';
+      else if (pct>50) hc='h3';
+      else if (pct>25) hc='h2';
+      else if (pct>0) hc='h1';
+      html += `<div class="hm-cell ${hc}" onclick="detailDayIdx=${di};renderHeat()" style="cursor:pointer">
+        <div class="hm-pct">${pct}%</div>
+        <div class="hm-sub">${bkC}/${tot} booked</div>
+        <div class="hm-bar"><div class="hm-fill" style="width:${pct}%"></div></div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  html += `</div></div></div>`;
+  document.getElementById('content').innerHTML = html;
+}
+
+function changeHeatWeek(d) { weekOffset+=d; detailDayIdx=null; renderHeat(); }
+
+// ─── SETUP ────────────────────────────────────────────────────
+function showSetup() {
+  document.getElementById('content').innerHTML = `
+    <div class="setup-box">
+      <div class="si">🔌</div>
+      <h2>Connect to Monday.com</h2>
+      <p>Your board is already pre-configured. Each team member only needs their own Monday.com API token to connect — takes 30 seconds.</p>
+      <div class="steps">
+        <div class="step"><div class="sn">1</div><div>Open <strong>monday.com</strong> and log in with your work account</div></div>
+        <div class="step"><div class="sn">2</div><div>Click your <strong>profile picture</strong> (bottom left) → <strong>Developers</strong> → copy your <strong>Personal API Token</strong></div></div>
+        <div class="step"><div class="sn">3</div><div>Click <strong>⚙ Config</strong> above → paste your token → click <strong>Save & Connect</strong></div></div>
+        <div class="step"><div class="sn">4</div><div>Done — the board, rooms, and all column mappings are already set up for you</div></div>
+      </div>
+      <button class="btn btn-accent" onclick="toggleCfg()">⚙ Configure Now</button>
+    </div>`;
+}
+
+// ─── MULTI-SLOT SELECTION ─────────────────────────────────────
+function handleSlotClick(e, el) {
+  const roomId  = el.dataset.room;
+  const slotIdx = parseInt(el.dataset.slot);
+  const date    = el.dataset.date;
+
+  // If different room from current selection, clear first
+  if (selectedSlots.length > 0 && selectedSlots[0].roomId !== roomId) {
+    clearSelection();
+  }
+
+  const existing = selectedSlots.findIndex(s => s.slotIdx === slotIdx);
+  if (existing >= 0) {
+    // Deselect
+    selectedSlots.splice(existing, 1);
+    el.classList.remove('selected');
+  } else {
+    // Only allow consecutive slots
+    if (selectedSlots.length > 0) {
+      const idxs = selectedSlots.map(s=>s.slotIdx).sort((a,b)=>a-b);
+      const min = idxs[0], max = idxs[idxs.length-1];
+      if (slotIdx !== min-1 && slotIdx !== max+1) {
+        toast('info','ℹ','Select consecutive slots only');
+        return;
+      }
+    }
+    selectedSlots.push({ roomId, slotIdx, date });
+    el.classList.add('selected');
+  }
+
+  updateSelBar(roomId);
+}
+
+function updateSelBar(roomId) {
+  const bar = document.getElementById('selBar');
+  if (selectedSlots.length === 0) {
+    bar.classList.remove('show');
+    return;
+  }
+  bar.classList.add('show');
+  const room = ROOMS.find(r => r.id === roomId);
+  const idxs = selectedSlots.map(s=>s.slotIdx).sort((a,b)=>a-b);
+  const slotRange = idxs.length === 1
+    ? SLOTS[idxs[0]]
+    : `${SLOTS[idxs[0]].split(' - ')[0]} → ${SLOTS[idxs[idxs.length-1]].split(' - ')[1]} (${idxs.length} × 30 min)`;
+  document.getElementById('selBarRoom').textContent = room?.name || roomId;
+  document.getElementById('selBarSlots').textContent = slotRange;
+}
+
+function clearSelection() {
+  selectedSlots = [];
+  document.querySelectorAll('.slot.selected').forEach(el => el.classList.remove('selected'));
+  document.getElementById('selBar').classList.remove('show');
+}
+
+function openModalFromSelection() {
+  if (selectedSlots.length === 0) return;
+  const sorted = [...selectedSlots].sort((a,b)=>a.slotIdx-b.slotIdx);
+  const {roomId, date} = sorted[0];
+  const idxs = sorted.map(s=>s.slotIdx);
+  const slotRange = idxs.length === 1
+    ? SLOTS[idxs[0]]
+    : `${SLOTS[idxs[0]].split(' - ')[0]} – ${SLOTS[idxs[idxs.length-1]].split(' - ')[1]}`;
+  const room = ROOMS.find(r => r.id === roomId);
+  const d = new Date(date+'T00:00:00');
+
+  document.getElementById('mName').value = localStorage.getItem('rb3_name') || '';
+  document.getElementById('mTitle').value = '';
+  document.getElementById('mPurpose').value = '';
+  document.getElementById('mMeetType').value = 'Internal Meet';
+  document.getElementById('mTeamsLink').value = '';
+  // Show token identity
+  if (currentUserName) {
+    document.getElementById('mTokenRow').style.display = 'block';
+    document.getElementById('mTokenName').textContent = currentUserName.split(' ')[0];
+  } else {
+    document.getElementById('mTokenRow').style.display = 'none';
+  }
+  document.getElementById('mRoom').textContent = room?.name || roomId;
+  document.getElementById('mSlot').textContent =
+    `${slotRange} · ${d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}`;
+  document.getElementById('mBtn').disabled = false;
+  document.getElementById('mBtn').innerHTML = 'Confirm Booking';
+  document.getElementById('overlay').classList.add('open');
+  pendingBook = { roomId, slotIdxs: idxs, date: d };
+  setTimeout(()=>document.getElementById('mName').focus(),100);
+}
+
+// ─── MODAL ────────────────────────────────────────────────────
+function openModal(roomId, slotIdx, dateStr) {
+  // Single slot click — add to selection and show bar
+  const d = dateStr ? new Date(dateStr+'T00:00:00') : currentDate;
+  const el = document.querySelector(`.slot[data-room="${roomId}"][data-slot="${slotIdx}"]`);
+  if (el) {
+    handleSlotClick({}, el);
+    return;
+  }
+  // Fallback: direct open
+  selectedSlots = [{ roomId, slotIdx, date: dateStr || fmtDate(currentDate) }];
+  openModalFromSelection();
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  pendingBook = null;
+}
+
+async function confirmBooking() {
+  if (!pendingBook) return;
+  const name      = document.getElementById('mName').value.trim();
+  const title     = document.getElementById('mTitle').value.trim();
+  const purpose   = document.getElementById('mPurpose').value.trim();
+  const meetType  = document.getElementById('mMeetType').value;
+  const teamsLink = document.getElementById('mTeamsLink').value.trim();
+
+  // Validate name
+  if (!name) {
+    document.getElementById('mName').style.borderColor='var(--red)';
+    setTimeout(()=>document.getElementById('mName').style.borderColor='',1500);
+    return;
+  }
+
+  // Teams link optional — stored if provided
+
+  // FIX 1: Check if this user already has a booking in any room for any of the selected slots
+  const { roomId, slotIdxs, date } = pendingBook;
+  const slotLabels = slotIdxs.sort((a,b)=>a-b).map(i=>SLOTS[i]);
+
+  if (currentUserName) {
+    const conflict = slotLabels.find(sl => {
+      return ROOMS.some(r => {
+        const bk = bookings[bookingKey(r.id, sl, date)];
+        // Check if bookedBy contains this user's token name
+        return bk && bk.tokenName && bk.tokenName === currentUserName;
+      });
+    });
+    if (conflict) {
+      toast('err','✗',`You already have a booking at ${conflict} — one slot per time period per person`);
+      return;
+    }
+  }
+
+  localStorage.setItem('rb3_name', name);
+  const btn = document.getElementById('mBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spin"></span> Booking...`;
+
+  try {
+    // FIX 2: Booked By = "Entered Name (Token Name)" if different
+    const tokenFirst  = currentUserName ? currentUserName.split(' ')[0] : '';
+    const displayName = tokenFirst && tokenFirst !== name
+      ? `${name} (${tokenFirst})`
+      : name;
+
+    const itemId = await createBooking(roomId, slotLabels, date, displayName, title, purpose, meetType, teamsLink);
+
+    slotLabels.forEach(sl => {
+      const key = bookingKey(roomId, sl, date);
+      bookings[key] = {
+        bookedBy:  displayName,
+        tokenName: currentUserName || name,
+        title:     title || '',
+        meetType,
+        itemId
+      };
+    });
+
+    clearSelection();
+    closeModal();
+    renderTab();
+    const room = ROOMS.find(r=>r.id===roomId);
+    const slotRange = slotLabels.length===1 ? slotLabels[0]
+      : `${slotLabels[0].split(' - ')[0]} – ${slotLabels[slotLabels.length-1].split(' - ')[1]}`;
+    toast('ok', meetType==='Client Meet' ? '🤝' : '✓', `${room?.name||roomId} · ${slotRange} booked`);
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = 'Confirm Booking';
+    toast('err','✗',`Failed: ${e.message}`);
+  }
+}
+
+// ─── TOAST ────────────────────────────────────────────────────
+function toast(type, icon, msg) {
+  clearTimeout(toastTmr);
+  const el = document.getElementById('toast');
+  el.className = `toast ${type}`;
+  document.getElementById('tIcon').textContent = icon;
+  document.getElementById('tMsg').textContent  = msg;
+  el.classList.add('show');
+  toastTmr = setTimeout(()=>el.classList.remove('show'), 3500);
+}
+
+// ─── GO ───────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
